@@ -648,152 +648,164 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ─── NAVBAR SCROLL ────────────────────────────────
-        const navbar = document.getElementById('navbar');
-        window.addEventListener('scroll', () => {
-            navbar.classList.toggle('scrolled', window.scrollY > 30);
-        });
+        document.addEventListener('DOMContentLoaded', function() {
 
-        // ─── SLIDESHOW ────────────────────────────────────
-        const slides = document.querySelectorAll('.slide');
-        const bars = document.querySelectorAll('.progress-bar-item');
-        const currentNum = document.getElementById('currentNum');
+            // ─── NAVBAR SCROLL ────────────────────────────────
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', () => {
+                navbar.classList.toggle('scrolled', window.scrollY > 30);
+            });
 
-        if (slides.length > 0) {
-            const DURATION = 5000;
-            let current = 0;
-            let timer = null;
+            // ─── SLIDESHOW ────────────────────────────────────
+            const slides = document.querySelectorAll('.slide');
+            const bars = document.querySelectorAll('.progress-bar-item');
+            const currentNum = document.getElementById('currentNum');
 
-            function goTo(index) {
-                slides[current].classList.remove('active');
-                bars[current].classList.remove('active');
-                bars[current].classList.add('done');
-                bars[current].querySelector('.fill').style.transition = 'none';
+            if (slides.length > 0) {
+                const DURATION = 5000;
+                let current = 0;
+                let timer = null;
 
-                if (index < current) {
+                function goTo(index) {
+                    slides[current].classList.remove('active');
+                    bars[current].classList.remove('active');
+                    bars[current].classList.add('done');
+                    bars[current].querySelector('.fill').style.transition = 'none';
+
+                    if (index < current) {
+                        bars.forEach((b, i) => {
+                            if (i >= index) {
+                                b.classList.remove('active', 'done');
+                                b.querySelector('.fill').style.width = '0%';
+                                b.querySelector('.fill').style.transition = 'none';
+                            }
+                        });
+                    }
+
+                    current = (index + slides.length) % slides.length;
+                    slides[current].classList.add('active');
+
+                    if (currentNum) {
+                        currentNum.textContent = String(current + 1).padStart(2, '0');
+                    }
+
                     bars.forEach((b, i) => {
-                        if (i >= index) {
-                            b.classList.remove('active', 'done');
-                            b.querySelector('.fill').style.width = '0%';
-                            b.querySelector('.fill').style.transition = 'none';
+                        if (i < current) {
+                            b.classList.remove('active');
+                            b.classList.add('done');
+                            b.querySelector('.fill').style.width = '100%';
                         }
                     });
-                }
 
-                current = (index + slides.length) % slides.length;
-                slides[current].classList.add('active');
-                currentNum.textContent = String(current + 1).padStart(2, '0');
+                    bars[current].classList.remove('done');
+                    bars[current].classList.add('active');
 
-                bars.forEach((b, i) => {
-                    if (i < current) {
-                        b.classList.remove('active');
-                        b.classList.add('done');
-                        b.querySelector('.fill').style.width = '100%';
-                    }
-                });
+                    const fill = bars[current].querySelector('.fill');
+                    fill.style.transition = 'none';
+                    fill.style.width = '0%';
 
-                bars[current].classList.remove('done');
-                bars[current].classList.add('active');
-
-                const fill = bars[current].querySelector('.fill');
-                fill.style.transition = 'none';
-                fill.style.width = '0%';
-
-                requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
-                        fill.style.transition = `width ${DURATION}ms linear`;
-                        fill.style.width = '100%';
-                    });
-                });
-
-                resetAutoplay();
-            }
-
-            function resetAutoplay() {
-                clearInterval(timer);
-                timer = setInterval(() => goTo(current + 1), DURATION);
-            }
-
-            document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
-            document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
-            bars.forEach((b, i) => b.addEventListener('click', () => goTo(i)));
-
-            goTo(0);
-
-            // ─── LIGHTBOX ─────────────────────────────────
-            const lightbox = document.getElementById('lightbox');
-            const lbImg = document.getElementById('lbImg');
-            const lbCaption = document.getElementById('lbCaption');
-            const lbClose = document.getElementById('lbClose');
-
-            // Abre el lightbox al hacer clic en el fondo del slide activo
-            document.querySelectorAll('.slide-bg').forEach((bg) => {
-                bg.addEventListener('click', () => {
-                    // Pausa el autoplay mientras el lightbox está abierto
-                    clearInterval(timer);
-
-                    const url = bg.style.backgroundImage.replace(/url\(["']?/, '').replace(/["']?\)/, '');
-                    const slide = bg.closest('.slide');
-                    const title = slide.querySelector('.slide-title')?.textContent || '';
-
-                    lbImg.src = url;
-                    lbCaption.textContent = title;
-                    lightbox.classList.add('open');
-                    document.body.style.overflow = 'hidden';
-                });
-            });
-
-            // Cierra al hacer clic en el fondo o en la X
-            lightbox.addEventListener('click', (e) => {
-                if (e.target === lightbox) cerrarLightbox();
-            });
-            lbClose.addEventListener('click', cerrarLightbox);
-
-            // Cierra con Escape
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') cerrarLightbox();
-            });
-
-            function cerrarLightbox() {
-                lightbox.classList.remove('open');
-                document.body.style.overflow = '';
-                lbImg.src = '';
-                // Reanuda el autoplay
-                resetAutoplay();
-            }
-        }
-        // ─── LIKES ────────────────────────────────────────
-        document.querySelectorAll('.like-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // evita abrir el lightbox
-
-                const postId = btn.dataset.postId;
-                const url = btn.dataset.url;
-
-                // Animación inmediata (optimistic UI)
-                btn.classList.add('pop');
-                setTimeout(() => btn.classList.remove('pop'), 400);
-
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                        },
+                        requestAnimationFrame(() => {
+                            fill.style.transition = `width ${DURATION}ms linear`;
+                            fill.style.width = '100%';
+                        });
                     });
 
-                    const data = await response.json();
-
-                    btn.classList.toggle('liked', data.liked);
-                    btn.querySelector('.like-count').textContent = data.count;
-
-                } catch (err) {
-                    console.error('Error al dar like:', err);
+                    resetAutoplay();
                 }
-            });
-        });
+
+                function resetAutoplay() {
+                    clearInterval(timer);
+                    timer = setInterval(() => goTo(current + 1), DURATION);
+                }
+
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+
+                if (prevBtn) prevBtn.addEventListener('click', () => goTo(current - 1));
+                if (nextBtn) nextBtn.addEventListener('click', () => goTo(current + 1));
+
+                bars.forEach((b, i) => b.addEventListener('click', () => goTo(i)));
+
+                goTo(0);
+
+                // ─── LIGHTBOX ─────────────────────────────────
+                const lightbox = document.getElementById('lightbox');
+                const lbImg = document.getElementById('lbImg');
+                const lbCaption = document.getElementById('lbCaption');
+                const lbClose = document.getElementById('lbClose');
+
+                if (lightbox) {
+                    document.querySelectorAll('.slide-bg').forEach((bg) => {
+                        bg.addEventListener('click', () => {
+                            clearInterval(timer);
+
+                            const url = bg.style.backgroundImage.replace(/url\(["']?/, '').replace(
+                                /["']?\)/, '');
+                            const slide = bg.closest('.slide');
+                            const title = slide.querySelector('.slide-title')?.textContent || '';
+
+                            lbImg.src = url;
+                            lbCaption.textContent = title;
+                            lightbox.classList.add('open');
+                            document.body.style.overflow = 'hidden';
+                        });
+                    });
+
+                    lightbox.addEventListener('click', (e) => {
+                        if (e.target === lightbox) cerrarLightbox();
+                    });
+
+                    if (lbClose) lbClose.addEventListener('click', cerrarLightbox);
+
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') cerrarLightbox();
+                    });
+
+                    function cerrarLightbox() {
+                        lightbox.classList.remove('open');
+                        document.body.style.overflow = '';
+                        lbImg.src = '';
+                        resetAutoplay();
+                    }
+                }
+
+                // ─── LIKES ────────────────────────────────────
+                document.querySelectorAll('.like-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+
+                        const url = btn.dataset.url;
+
+                        btn.classList.add('pop');
+                        setTimeout(() => btn.classList.remove('pop'), 400);
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector(
+                                        'meta[name="csrf-token"]').getAttribute(
+                                        'content'),
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                },
+                            });
+
+                            const data = await response.json();
+
+                            btn.classList.toggle('liked', data.liked);
+                            btn.querySelector('.like-count').textContent = data.count;
+
+                        } catch (err) {
+                            console.error('Error al dar like:', err);
+                        }
+                    });
+                });
+
+            } // fin if slides.length > 0
+
+        }); // fin DOMContentLoaded
     </script>
     {{-- ─── LIGHTBOX ────────────────────────────────── --}}
     <div class="lightbox" id="lightbox">
